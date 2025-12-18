@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Multi-Step Form with Progress Indicator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background-color: white;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(to right, #4a00e0, #8e2de2);
+            color: white;
+            padding: 25px 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            margin-bottom: 8px;
+        }
+
+        .header p {
+            opacity: 0.9;
+        }
+
+        .form-container {
+            padding: 30px;
+        }
+
+        /* Progress Bar Styles */
+        .progress-bar {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 40px;
+            position: relative;
+        }
+
+        .progress-bar::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            transform: translateY(-50%);
+            height: 4px;
+            width: 100%;
+            background-color: #e0e0e0;
+            z-index: 1;
+        }
+
+        .progress-line {
+            position: absolute;
+            top: 50%;
+            left: 0;
+            transform: translateY(-50%);
+            height: 4px;
+            width: 0%;
+            background: linear-gradient(to right, #4a00e0, #8e2de2);
+            transition: width 0.5s ease;
+            z-index: 2;
+        }
+
+        .step {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: #e0e0e0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            color: #777;
+            position: relative;
+            z-index: 3;
+            transition: all 0.3s ease;
+        }
+
+        .step.active {
+            background: linear-gradient(to right, #4a00e0, #8e2de2);
+            color: white;
+            transform: scale(1.1);
+            box-shadow: 0 0 0 5px rgba(142, 45, 226, 0.2);
+        }
+
+        .step.completed {
+            background-color: #4CAF50;
+            color: white;
+        }
+
+        .step-label {
+            position: absolute;
+            top: 45px;
+            left: 50%;
+            transform: translateX(-50%);
+            white-space: nowrap;
+            font-size: 14px;
+            color: #777;
+        }
+
+        .step.active .step-label {
+            color: #4a00e0;
+            font-weight: 600;
+        }
+
+        /* Form Steps */
+        .form-step {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-step.active {
+            display: block;
+        }
+
+        .form-step h2 {
+            margin-bottom: 20px;
+            color: #333;
+            border-bottom: 2px solid #f0f0f0;
+            padding-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .form-group input, 
+        .form-group select, 
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border 0.3s ease;
+        }
+
+        .form-group input:focus, 
+        .form-group select:focus, 
+        .form-group textarea:focus {
+            border-color: #8e2de2;
+            outline: none;
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .checkbox-group input {
+            width: auto;
+        }
+
+        .error {
+            color: #e53935;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        /* Button Styles */
+        .button-group {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-prev {
+            background-color: #f5f5f5;
+            color: #555;
+        }
+
+        .btn-prev:hover {
+            background-color: #e0e0e0;
+        }
+
+        .btn-next, .btn-submit {
+            background: linear-gradient(to right, #4a00e0, #8e2de2);
+            color: white;
+        }
+
+        .btn-next:hover, .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(142, 45, 226, 0.3);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        /* Summary Step */
+        .summary-item {
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-left: 4px solid #8e2de2;
+        }
+
+        .summary-item h3 {
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .summary-item p {
+            color: #666;
+            line-height: 1.5;
+        }
+
+        /* Auto-save Notification */
+        .auto-save-notification {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transform: translateY(100px);
+            opacity: 0;
+            transition: all 0.5s ease;
+            z-index: 100;
+        }
+
+        .auto-save-notification.show {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .progress-bar {
+                margin-bottom: 30px;
+            }
+            
+            .step-label {
+                display: none;
+            }
+            
+            .form-container {
+                padding: 20px;
+            }
+            
+            .button-group {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Multi-Step Registration Form</h1>
+            <p>Complete all steps to submit your application</p>
+        </div>
+        
+        <div class="form-container">
+            <!-- Progress Bar -->
+            <div class="progress-bar">
+                <div class="progress-line" id="progress-line"></div>
+                <div class="step active" id="step-1">
+                    <span>1</span>
+                    <div class="step-label">Personal Info</div>
+                </div>
+                <div class="step" id="step-2">
+                    <span>2</span>
+                    <div class="step-label">Account Details</div>
+                </div>
+                <div class="step" id="step-3">
+                    <span>3</span>
+                    <div class="step-label">Preferences</div>
+                </div>
+                <div class="step" id="step-4">
+                    <span>4</span>
+                    <div class="step-label">Summary</div>
+                </div>
+            </div>
+            
+            <!-- Form Steps -->
+            <form id="multi-step-form">
+                <!-- Step 1: Personal Information -->
+                <div class="form-step active" id="step1">
+                    <h2>Personal Information</h2>
+                    <div class="form-group">
+                        <label for="full-name">Full Name *</label>
+                        <input type="text" id="full-name" name="full-name" placeholder="Enter your full name">
+                        <div class="error" id="name-error">Please enter your full name</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email Address *</label>
+                        <input type="email" id="email" name="email" placeholder="Enter your email address">
+                        <div class="error" id="email-error">Please enter a valid email address</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Phone Number *</label>
+                        <input type="tel" id="phone" name="phone" placeholder="Enter your phone number">
+                        <div class="error" id="phone-error">Please enter a valid phone number</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="dob">Date of Birth *</label>
+                        <input type="date" id="dob" name="dob">
+                        <div class="error" id="dob-error">Please enter your date of birth</div>
+                    </div>
+                </div>
+                
+                <!-- Step 2: Account Details -->
+                <div class="form-step" id="step2">
+                    <h2>Account Details</h2>
+                    <div class="form-group">
+                        <label for="username">Username *</label>
+                        <input type="text" id="username" name="username" placeholder="Choose a username">
+                        <div class="error" id="username-error">Username must be at least 4 characters</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Password *</label>
+                        <input type="password" id="password" name="password" placeholder="Create a password">
+                        <div class="error" id="password-error">Password must be at least 8 characters</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="confirm-password">Confirm Password *</label>
+                        <input type="password" id="confirm-password" name="confirm-password" placeholder="Confirm your password">
+                        <div class="error" id="confirm-password-error">Passwords do not match</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="security-question">Security Question *</label>
+                        <select id="security-question" name="security-question">
+                            <option value="">Select a security question</option>
+                            <option value="pet">What is your pet's name?</option>
+                            <option value="school">What was your first school name?</option>
+                            <option value="city">In which city were you born?</option>
+                        </select>
+                        <div class="error" id="security-question-error">Please select a security question</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="security-answer">Security Answer *</label>
+                        <input type="text" id="security-answer" name="security-answer" placeholder="Enter your answer">
+                        <div class="error" id="security-answer-error">Please enter an answer</div>
+                    </div>
+                </div>
+                
+                <!-- Step 3: Preferences -->
+                <div class="form-step" id="step3">
+                    <h2>Preferences</h2>
+                    <div class="form-group">
+                        <label for="newsletter">Communication Preferences</label>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="newsletter" name="newsletter" checked>
+                            <label for="newsletter">Subscribe to newsletter</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="notifications" name="notifications" checked>
+                            <label for="notifications">Receive email notifications</label>
+                        </div>
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="sms" name="sms">
+                            <label for="sms">Receive SMS updates</label>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="theme">Preferred Theme</label>
+                        <select id="theme" name="theme">
+                            <option value="light">Light</option>
+                            <option value="dark">Dark</option>
+                            <option value="auto">Auto (System Default)</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="language">Preferred Language *</label>
+                        <select id="language" name="language">
+                            <option value="">Select a language</option>
+                            <option value="en">English</option>
+                            <option value="es">Spanish</option>
+                            <option value="fr">French</option>
+                            <option value="de">German</option>
+                        </select>
+                        <div class="error" id="language-error">Please select a language</div>
+                    </div>
+                    <div class="form-group">
+                        <label for="comments">Additional Comments</label>
+                        <textarea id="comments" name="comments" placeholder="Any additional information or comments..."></textarea>
+                    </div>
+                </div>
+                
+                <!-- Step 4: Summary -->
+                <div class="form-step" id="step4">
+                    <h2>Summary</h2>
+                    <p>Please review your information before submitting.</p>
+                    
+                    <div class="summary-item">
+                        <h3>Personal Information</h3>
+                        <p><strong>Name:</strong> <span id="summary-name"></span></p>
+                        <p><strong>Email:</strong> <span id="summary-email"></span></p>
+                        <p><strong>Phone:</strong> <span id="summary-phone"></span></p>
+                        <p><strong>Date of Birth:</strong> <span id="summary-dob"></span></p>
+                    </div>
+                    
+                    <div class="summary-item">
+                        <h3>Account Details</h3>
+                        <p><strong>Username:</strong> <span id="summary-username"></span></p>
+                        <p><strong>Security Question:</strong> <span id="summary-question"></span></p>
+                    </div>
+                    
+                    <div class="summary-item">
+                        <h3>Preferences</h3>
+                        <p><strong>Newsletter:</strong> <span id="summary-newsletter"></span></p>
+                        <p><strong>Notifications:</strong> <span id="summary-notifications"></span></p>
+                        <p><strong>Theme:</strong> <span id="summary-theme"></span></p>
+                        <p><strong>Language:</strong> <span id="summary-language"></span></p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <div class="checkbox-group">
+                            <input type="checkbox" id="terms" name="terms">
+                            <label for="terms">I agree to the terms and conditions *</label>
+                        </div>
+                        <div class="error" id="terms-error">You must agree to the terms and conditions</div>
+                    </div>
+                </div>
+                
+                <!-- Buttons -->
+                <div class="button-group">
+                    <button type="button" class="btn btn-prev" id="prev-btn" disabled>
+                        <i class="fas fa-arrow-left"></i> Previous
+                    </button>
+                    <button type="button" class="btn btn-next" id="next-btn">
+                        Next <i class="fas fa-arrow-right"></i>
+                    </button>
+                    <button type="submit" class="btn btn-submit" id="submit-btn" style="display: none;">
+                        <i class="fas fa-paper-plane"></i> Submit Form
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Auto-save Notification -->
+    <div class="auto-save-notification" id="auto-save-notification">
+        <i class="fas fa-save"></i>
+        <span>Progress saved automatically</span>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
+            const form = document.getElementById('multi-step-form');
+            const steps = document.querySelectorAll('.form-step');
+            const progressSteps = document.querySelectorAll('.step');
+            const progressLine = document.getElementById('progress-line');
+            const nextBtn = document.getElementById('next-btn');
+            const prevBtn = document.getElementById('prev-btn');
+            const submitBtn = document.getElementById('submit-btn');
+            const autoSaveNotification = document.getElementById('auto-save-notification');
+            
+            // Form State
+            let currentStep = 0;
+            const formData = {
+                step1: {},
+                step2: {},
+                step3: {}
+            };
+            
+            // Auto-save timer
+            let autoSaveTimer;
+            
+            // Initialize from localStorage if available
+            loadFormData();
+            updateForm();
+            
+            // Event Listeners
+            nextBtn.addEventListener('click', nextStep);
+            prevBtn.addEventListener('click', prevStep);
+            form.addEventListener('input', handleFormInput);
+            form.addEventListener('submit', handleFormSubmit);
+            
+            // Input event for auto-save
+            document.querySelectorAll('input, select, textarea').forEach(element => {
+                element.addEventListener('input', debounce(autoSave, 1500));
+            });
+            
+            // Step Navigation Functions
+            function nextStep() {
+                if (validateStep(currentStep)) {
+                    saveStepData(currentStep);
+                    currentStep++;
+                    updateForm();
+                    showAutoSaveNotification();
+                }
+            }
+            
+            function prevStep() {
+                saveStepData(currentStep);
+                currentStep--;
+                updateForm();
+            }
+            
+            // Update UI based on current step
+            function updateForm() {
+                // Hide all steps
+                steps.forEach(step => {
+                    step.classList.remove('active');
+                });
+                
+                // Show current step
+                steps[currentStep].classList.add('active');
+                
+                // Update progress bar
+                updateProgressBar();
+                
+                // Update buttons
+                prevBtn.disabled = currentStep === 0;
+                
+                if (currentStep === steps.length - 1) {
+                    nextBtn.style.display = 'none';
+                    submitBtn.style.display = 'flex';
+                    updateSummary();
+                } else {
+                    nextBtn.style.display = 'flex';
+                    submitBtn.style.display = 'none';
+                }
+                
+                // Restore saved data for current step
+                restoreStepData(currentStep);
+            }
+            
+            // Update progress bar
+            function updateProgressBar() {
+                // Update step indicators
+                progressSteps.forEach((step, index) => {
+                    if (index < currentStep) {
+                        step.classList.add('completed');
+                        step.classList.remove('active');
+                    } else if (index === currentStep) {
+                        step.classList.add('active');
+                        step.classList.remove('completed');
+                    } else {
+                        step.classList.remove('active', 'completed');
+                    }
+                });
+                
+                // Update progress line
+                const progressPercent = (currentStep / (steps.length - 1)) * 100;
+                progressLine.style.width = `${progressPercent}%`;
+            }
+            
+            // Form Validation
+            function validateStep(stepIndex) {
+                let isValid = true;
+                const stepElement = steps[stepIndex];
+                
+                // Hide all errors first
+                stepElement.querySelectorAll('.error').forEach(error => {
+                    error.style.display = 'none';
+                });
+                
+                // Validate based on step
+                if (stepIndex === 0) {
+                    // Step 1 validation
+                    const name = document.getElementById('full-name').value.trim();
+                    const email = document.getElementById('email').value.trim();
+                    const phone = document.getElementById('phone').value.trim();
+                    const dob = document.getElementById('dob').value;
+                    
+                    if (!name) {
+                        document.getElementById('name-error').style.display = 'block';
+                        isValid = false;
+                    }
+                    
+                    if (!email || !validateEmail(email)) {
+                        document.getElementById('email-error').style.display = 'block';
+                        isValid = false;
+                    }
+                    
+                    if (!phone || !validatePhone(phone)) {
+                        document.getElementById('phone-error').style.display = 'block';
+                        isValid = false;
+                    }
+                    
+                    if (!dob) {
+                        document.getElementById('dob-error').style.display = 'block';
+                        isValid = false;
+                    }
+                } else if (stepIndex === 1) {
+                    // Step 2 validation
+                    const username = document.getElementById('username').value.trim();
+                    const password = document.getElementById('password').value;
+                    const confirmPassword = document.getElementById('confirm-password').value;
+                    const securityQuestion = document.getElementById('security-question').value;
+                    const securityAnswer = document.getElementById('security-answer').value.trim();
+                    
+                    if (!username || username.length < 4) {
+                        document.getElementById('username-error').style.display = 'block';
+                        isValid = false;
+                    }
+                    
+                    if (!password || password.length < 8) {
+                        document.getElementById('password-error').style.display = 'block';
+                        isValid = false;
+                    }
+                    
+                    if (password !== confirmPassword) {
+                        document.getElementById('confirm-password-error').style.display = 'block';
+                        isValid = false;
+                    }
+                    
+                    if (!securityQuestion) {
+                        document.getElementById('security-question-error').style.display = 'block';
+                        isValid = false;
+                    }
+                    
+                    if (!securityAnswer) {
+                        document.getElementById('security-answer-error').style.display = 'block';
+                        isValid = false;
+                    }
+                } else if (stepIndex === 2) {
+                    // Step 3 validation
+                    const language = document.getElementById('language').value;
+                    
+                    if (!language) {
+                        document.getElementById('language-error').style.display = 'block';
+                        isValid = false;
+                    }
+                } else if (stepIndex === 3) {
+                    // Step 4 validation (terms and conditions)
+                    const terms = document.getElementById('terms').checked;
+                    
+                    if (!terms) {
+                        document.getElementById('terms-error').style.display = 'block';
+                        isValid = false;
+                    } else {
+                        document.getElementById('terms-error').style.display = 'none';
+                    }
+                }
+                
+                return isValid;
+            }
+            
+            // Helper validation functions
+            function validateEmail(email) {
+                const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                return re.test(email);
+            }
+            
+            function validatePhone(phone) {
+                const re = /^[\+]?[1-9][\d]{0,15}$/;
+                return re.test(phone.replace(/[\s\-\(\)]/g, ''));
+            }
+            
+            // Handle form input
+            function handleFormInput(e) {
+                // Clear error when user starts typing
+                if (e.target.classList.contains('error')) return;
+                
+                const errorElement = document.getElementById(`${e.target.id}-error`);
+                if (errorElement) {
+                    errorElement.style.display = 'none';
+                }
+            }
+            
+            // Handle form submission
+            function handleFormSubmit(e) {
+                e.preventDefault();
+                
+                if (validateStep(currentStep)) {
+                    saveStepData(currentStep);
+                    
+                    // In a real application, you would send data to a server here
+                    alert('Form submitted successfully! Thank you for registering.');
+                    
+                    // Reset form for demo purposes
+                    setTimeout(() => {
+                        form.reset();
+                        currentStep = 0;
+                        updateForm();
+                        localStorage.removeItem('multiStepFormData');
+                    }, 2000);
+                }
+            }
+            
+            // Auto-save functionality
+            function autoSave() {
+                saveStepData(currentStep);
+                saveFormDataToLocalStorage();
+            }
+            
+            // Show auto-save notification
+            function showAutoSaveNotification() {
+                autoSaveNotification.classList.add('show');
+                
+                setTimeout(() => {
+                    autoSaveNotification.classList.remove('show');
+                }, 3000);
+            }
+            
+            // Save data for current step
+            function saveStepData(stepIndex) {
+                const stepElement = steps[stepIndex];
+                const inputs = stepElement.querySelectorAll('input, select, textarea');
+                
+                inputs.forEach(input => {
+                    const key = input.id || input.name;
+                    const value = input.type === 'checkbox' ? input.checked : input.value;
+                    
+                    if (stepIndex === 0) formData.step1[key] = value;
+                    else if (stepIndex === 1) formData.step2[key] = value;
+                    else if (stepIndex === 2) formData.step3[key] = value;
+                });
+                
+                saveFormDataToLocalStorage();
+            }
+            
+            // Restore data for current step
+            function restoreStepData(stepIndex) {
+                const stepData = stepIndex === 0 ? formData.step1 : 
+                               stepIndex === 1 ? formData.step2 : 
+                               formData.step3;
+                
+                for (const [key, value] of Object.entries(stepData)) {
+                    const element = document.getElementById(key) || document.querySelector(`[name="${key}"]`);
+                    
+                    if (element) {
+                        if (element.type === 'checkbox') {
+                            element.checked = value;
+                        } else {
+                            element.value = value;
+                        }
+                    }
+                }
+            }
+            
+            // Save form data to localStorage
+            function saveFormDataToLocalStorage() {
+                const dataToSave = {
+                    formData: formData,
+                    currentStep: currentStep
+                };
+                localStorage.setItem('multiStepFormData', JSON.stringify(dataToSave));
+            }
+            
+            // Load form data from localStorage
+            function loadFormData() {
+                const savedData = localStorage.getItem('multiStepFormData');
+                
+                if (savedData) {
+                    try {
+                        const parsedData = JSON.parse(savedData);
+                        Object.assign(formData, parsedData.formData);
+                        currentStep = parsedData.currentStep || 0;
+                    } catch (e) {
+                        console.error('Error loading saved form data:', e);
+                    }
+                }
+            }
+            
+            // Update summary page
+            function updateSummary() {
+                document.getElementById('summary-name').textContent = formData.step1['full-name'] || 'Not provided';
+                document.getElementById('summary-email').textContent = formData.step1['email'] || 'Not provided';
+                document.getElementById('summary-phone').textContent = formData.step1['phone'] || 'Not provided';
+                document.getElementById('summary-dob').textContent = formData.step1['dob'] || 'Not provided';
+                document.getElementById('summary-username').textContent = formData.step2['username'] || 'Not provided';
+                
+                // Map security question value to text
+                const securityQuestionMap = {
+                    'pet': "What is your pet's name?",
+                    'school': "What was your first school name?",
+                    'city': "In which city were you born?"
+                };
+                const questionKey = formData.step2['security-question'];
+                document.getElementById('summary-question').textContent = securityQuestionMap[questionKey] || 'Not provided';
+                
+                document.getElementById('summary-newsletter').textContent = formData.step3['newsletter'] ? 'Yes' : 'No';
+                document.getElementById('summary-notifications').textContent = formData.step3['notifications'] ? 'Yes' : 'No';
+                document.getElementById('summary-sms').textContent = formData.step3['sms'] ? 'Yes' : 'No';
+                document.getElementById('summary-theme').textContent = formData.step3['theme'] || 'Light';
+                
+                // Map language value to text
+                const languageMap = {
+                    'en': 'English',
+                    'es': 'Spanish',
+                    'fr': 'French',
+                    'de': 'German'
+                };
+                const languageKey = formData.step3['language'];
+                document.getElementById('summary-language').textContent = languageMap[languageKey] || 'Not provided';
+            }
+            
+            // Debounce function for auto-save
+            function debounce(func, wait) {
+                let timeout;
+                return function executedFunction(...args) {
+                    const later = () => {
+                        clearTimeout(timeout);
+                        func(...args);
+                    };
+                    clearTimeout(timeout);
+                    timeout = setTimeout(later, wait);
+                };
+            }
+        });
+    </script>
+</body>
+</html>
